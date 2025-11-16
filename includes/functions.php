@@ -107,6 +107,17 @@ function logActivity($pdo, $user_id, $action, $table_name, $record_id, $details)
     }
 }
 
+// Get membership number from email
+function getMembershipNumber($email) {
+    $parts = explode('@', $email);
+    return strtoupper($parts[0]);
+}
+
+// Calculate points earned (100 points per 1000 BDT)
+function calculatePoints($amount) {
+    return floor($amount / 1000) * 100;
+}
+
 // JSON response
 function jsonResponse($data, $status = 200) {
     http_response_code($status);

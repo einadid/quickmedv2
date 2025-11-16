@@ -73,6 +73,17 @@ $admin = $stmt->fetch();
                    <?= basename($_SERVER['PHP_SELF']) === 'audit-logs.php' ? 'bg-red-100 text-red-600 font-semibold' : '' ?>">
                     📝 Audit Logs
                 </a>
+                <a href="/quickmed/admin/news.php" 
+   class="block px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition
+   <?= basename($_SERVER['PHP_SELF']) === 'news.php' ? 'bg-red-100 text-red-600 font-semibold' : '' ?>">
+    📰 Health News
+</a>
+                    <a href="/quickmed/admin/verification-codes.php" 
+   class="block px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition
+   <?= basename($_SERVER['PHP_SELF']) === 'verification-codes.php' ? 'bg-red-100 text-red-600 font-semibold' : '' ?>">
+    🔑 Verification Codes
+</a>
+                
             </div>
         </div>
     </div>
@@ -96,16 +107,13 @@ $admin = $stmt->fetch();
                 <div class="text-2xl">💊</div>
                 <div class="text-xs">Medicines</div>
             </a>
+            
             <a href="/quickmed/admin/reports.php" class="text-center py-2">
                 <div class="text-2xl">📈</div>
                 <div class="text-xs">Reports</div>
                 
             </a>
-            <a href="/quickmed/admin/verification-codes.php" 
-   class="block px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition
-   <?= basename($_SERVER['PHP_SELF']) === 'verification-codes.php' ? 'bg-red-100 text-red-600 font-semibold' : '' ?>">
-    🔑 Verification Codes
-</a>
+        
             <a href="/quickmed/admin/audit-logs.php" class="text-center py-2">
                 <div class="text-2xl">📝</div>
                 <div class="text-xs">Logs</div>

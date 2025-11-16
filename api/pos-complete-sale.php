@@ -90,20 +90,20 @@ try {
         $stmt->execute([$item['quantity'], $item['inventory_id']]);
     }
 
-    // Award points to customer if registered (1 point per 100 BDT)
-    if ($customer_id) {
-        $points = floor($total / 100);
-        if ($points > 0) {
-            $stmt = $pdo->prepare("UPDATE users SET points = points + ? WHERE id = ?");
-            $stmt->execute([$points, $customer_id]);
+// Award points to customer if registered (100 points per 1000 BDT)
+if ($customer_id) {
+    $points = calculatePoints($total);
+    if ($points > 0) {
+        $stmt = $pdo->prepare("UPDATE users SET points = points + ? WHERE id = ?");
+        $stmt->execute([$points, $customer_id]);
 
-            $stmt = $pdo->prepare("
-                INSERT INTO point_history (user_id, points, type, description)
-                VALUES (?, ?, 'earned', 'POS purchase')
-            ");
-            $stmt->execute([$customer_id, $points]);
-        }
+        $stmt = $pdo->prepare("
+            INSERT INTO point_history (user_id, points, type, description)
+            VALUES (?, ?, 'earned', ?)
+        ");
+        $stmt->execute([$customer_id, $points, "POS purchase: ৳" . number_format($total, 2)]);
     }
+}
 
     // Log activity
     logActivity($pdo, $_SESSION['user_id'], 'POS_SALE', 'pos_sales', $sale_id, "Invoice: $invoice_number, Total: ৳$total");

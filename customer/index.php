@@ -2,6 +2,10 @@
 $pageTitle = 'Shop - QuickMed';
 include 'includes/header.php';
 
+
+
+
+
 // Get all shops
 $shops = $pdo->query("SELECT * FROM shops WHERE is_active = 1")->fetchAll();
 

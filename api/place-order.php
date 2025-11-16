@@ -114,18 +114,19 @@ try {
         $isFirstOrder = false;
     }
 
-    // Award points (1 point per 100 BDT spent)
-    $points = floor($total / 100);
-    if ($points > 0) {
-        $stmt = $pdo->prepare("UPDATE users SET points = points + ? WHERE id = ?");
-        $stmt->execute([$points, $_SESSION['user_id']]);
 
-        $stmt = $pdo->prepare("
-            INSERT INTO point_history (user_id, points, type, description)
-            VALUES (?, ?, 'earned', 'Order purchase')
-        ");
-        $stmt->execute([$_SESSION['user_id'], $points]);
-    }
+    // Award points (100 points per 1000 BDT spent)
+$points = calculatePoints($total);
+if ($points > 0) {
+    $stmt = $pdo->prepare("UPDATE users SET points = points + ? WHERE id = ?");
+    $stmt->execute([$points, $_SESSION['user_id']]);
+
+    $stmt = $pdo->prepare("
+        INSERT INTO point_history (user_id, points, type, description)
+        VALUES (?, ?, 'earned', ?)
+    ");
+    $stmt->execute([$_SESSION['user_id'], $points, "Order purchase: ৳" . number_format($total, 2)]);
+}
 
     // Log activity
     logActivity($pdo, $_SESSION['user_id'], 'ORDER_PLACED', 'orders', $order_id, "Order: " . implode(', ', $orderNumbers));

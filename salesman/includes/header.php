@@ -1,15 +1,29 @@
 <?php
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
-requireRole('salesman');
 
-// Get salesman data
-$stmt = $pdo->prepare("SELECT u.*, s.name as shop_name FROM users u JOIN shops s ON u.shop_id = s.id WHERE u.id = ?");
+// Check if logged in
+if (!isset($_SESSION['user_id'])) {
+    redirect('/quickmed/login.php');
+}
+
+// Check if salesman
+if ($_SESSION['role'] !== 'salesman') {
+    redirect('/quickmed/login.php');
+}
+
+// Get salesman data with shop
+$stmt = $pdo->prepare("
+    SELECT u.*, s.name as shop_name 
+    FROM users u 
+    LEFT JOIN shops s ON u.shop_id = s.id 
+    WHERE u.id = ?
+");
 $stmt->execute([$_SESSION['user_id']]);
 $salesman = $stmt->fetch();
 
-if (!$salesman['shop_id']) {
-    die('Error: No shop assigned to this salesman');
+if (!$salesman || !$salesman['shop_id']) {
+    die('Error: No shop assigned to this salesman. Please contact administrator.');
 }
 ?>
 <!DOCTYPE html>
@@ -30,6 +44,7 @@ if (!$salesman['shop_id']) {
     </style>
 </head>
 <body class="bg-gray-100">
+    
     <!-- Top Navigation -->
     <nav class="bg-indigo-700 text-white shadow-lg">
         <div class="container mx-auto px-4">
@@ -80,24 +95,24 @@ if (!$salesman['shop_id']) {
     <!-- Mobile Bottom Navigation -->
     <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg z-50">
         <div class="grid grid-cols-4 gap-1 p-2">
-            <a href="/quickmed/salesman/dashboard.php" class="text-center py-2">
+            <a href="/quickmed/salesman/dashboard.php" class="text-center py-2 <?= basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'text-indigo-600' : '' ?>">
                 <div class="text-2xl">📊</div>
                 <div class="text-xs">Dashboard</div>
             </a>
-            <a href="/quickmed/salesman/pos.php" class="text-center py-2">
+            <a href="/quickmed/salesman/pos.php" class="text-center py-2 <?= basename($_SERVER['PHP_SELF']) === 'pos.php' ? 'text-indigo-600' : '' ?>">
                 <div class="text-2xl">💳</div>
                 <div class="text-xs">POS</div>
             </a>
-            <a href="/quickmed/salesman/sales.php" class="text-center py-2">
+            <a href="/quickmed/salesman/sales.php" class="text-center py-2 <?= basename($_SERVER['PHP_SELF']) === 'sales.php' ? 'text-indigo-600' : '' ?>">
                 <div class="text-2xl">📋</div>
                 <div class="text-xs">Sales</div>
             </a>
-            <a href="/quickmed/salesman/returns.php" class="text-center py-2">
+            <a href="/quickmed/salesman/returns.php" class="text-center py-2 <?= basename($_SERVER['PHP_SELF']) === 'returns.php' ? 'text-indigo-600' : '' ?>">
                 <div class="text-2xl">🔄</div>
                 <div class="text-xs">Returns</div>
             </a>
         </div>
     </div>
 
-    <!-- Main Content (with sidebar offset on desktop) -->
+    <!-- Main Content -->
     <div class="md:ml-64 min-h-screen pb-20 md:pb-4">

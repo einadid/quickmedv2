@@ -77,6 +77,23 @@ function createUser($pdo, $data) {
     return $user_id;
 }
 
+// Auto login function
+function autoLogin($pdo, $user_id) {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$user_id]);
+    $user = $stmt->fetch();
+    
+    if ($user) {
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['name'] = $user['name'];
+        $_SESSION['email'] = $user['email'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['shop_id'] = $user['shop_id'];
+        return true;
+    }
+    return false;
+}
+
 function login($pdo, $email, $password) {
     $user = getUserByEmail($pdo, $email);
     
