@@ -8,34 +8,56 @@ function getUserByEmail($pdo, $email) {
     return $stmt->fetch();
 }
 
-function createUser($pdo, $data) {
+function verifyCompanyCode($pdo, $code, $role) {
     $stmt = $pdo->prepare("
-        INSERT INTO users (name, email, phone, password, role, verification_code, is_verified)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        SELECT * FROM verification_codes 
+        WHERE code = ? AND role = ? AND is_used = 0
     ");
+    $stmt->execute([$code, $role]);
+    return $stmt->fetch();
+}
+
+function markCodeAsUsed($pdo, $code, $user_id) {
+    $stmt = $pdo->prepare("
+        UPDATE verification_codes 
+        SET is_used = 1, used_by = ?, used_at = NOW() 
+        WHERE code = ?
+    ");
+    $stmt->execute([$user_id, $code]);
+}
+
+function createUser($pdo, $data) {
+    // If not customer, verification code is required
+    if ($data['role'] !== 'customer') {
+        if (empty($data['verification_code'])) {
+            throw new Exception('Verification code is required for this role');
+        }
+        
+        // Verify the code
+        $codeData = verifyCompanyCode($pdo, $data['verification_code'], $data['role']);
+        if (!$codeData) {
+            throw new Exception('Invalid or already used verification code');
+        }
+    }
     
-    $verification_code = ($data['role'] !== 'customer') ? generateVerificationCode() : null;
-    $is_verified = ($data['role'] === 'customer') ? 1 : 0;
+    $stmt = $pdo->prepare("
+        INSERT INTO users (name, email, phone, password, role)
+        VALUES (?, ?, ?, ?, ?)
+    ");
     
     $stmt->execute([
         $data['name'],
         $data['email'],
         $data['phone'] ?? null,
         password_hash($data['password'], PASSWORD_DEFAULT),
-        $data['role'] ?? 'customer',
-        $verification_code,
-        $is_verified
+        $data['role'] ?? 'customer'
     ]);
     
     $user_id = $pdo->lastInsertId();
     
-    // Send verification email if not customer
+    // Mark code as used if not customer
     if ($data['role'] !== 'customer') {
-        sendEmail(
-            $data['email'],
-            'QuickMed - Verification Code',
-            "Your verification code is: $verification_code"
-        );
+        markCodeAsUsed($pdo, $data['verification_code'], $user_id);
     }
     
     // Give signup bonus points to customers
@@ -49,17 +71,10 @@ function createUser($pdo, $data) {
         $pdo->prepare("UPDATE users SET points = 100 WHERE id = ?")->execute([$user_id]);
     }
     
+    // Log activity
+    logActivity($pdo, $user_id, 'USER_REGISTERED', 'users', $user_id, "New {$data['role']} registered");
+    
     return $user_id;
-}
-
-function verifyUser($pdo, $email, $code) {
-    $stmt = $pdo->prepare("
-        UPDATE users 
-        SET is_verified = 1, verification_code = NULL 
-        WHERE email = ? AND verification_code = ?
-    ");
-    $stmt->execute([$email, $code]);
-    return $stmt->rowCount() > 0;
 }
 
 function login($pdo, $email, $password) {
@@ -71,10 +86,6 @@ function login($pdo, $email, $password) {
     
     if (!password_verify($password, $user['password'])) {
         return ['success' => false, 'message' => 'Invalid credentials'];
-    }
-    
-    if (!$user['is_verified']) {
-        return ['success' => false, 'message' => 'Please verify your account first'];
     }
     
     if (!$user['is_active']) {
